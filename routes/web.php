@@ -52,4 +52,6 @@ Route::get('/client/logout', [ClientController::class, 'ClientLogout'])->name('c
 
 Route::middleware('client')->group(function() {
     Route::get('/client/dashboard', [ClientController::class, 'ClientDashboard'])->name('client.dashboard');
+    Route::get('/client/profile', [ClientController::class, 'ClientProfile'])->name('client.profile');
+    Route::post('/client/profile/store', [ClientController::class, 'ClientProfileStore'])->name('client.profile.store');
 });

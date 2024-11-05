@@ -196,6 +196,75 @@ class ClientController extends Controller
     public function ClientLogout(): RedirectResponse
     {
         Auth::guard('client')->logout();
-        return redirect()->route('client.login')->with('success', 'Logout Success');
+        $notification = array(
+            'message' => 'Logout Successfully!',
+            'alert-type' => 'success'
+        );
+        return redirect()->route('client.login')->with($notification);
+    }
+
+    /**
+     * @return Factory|View|Application
+     */
+    public function ClientProfile(): Application|View|Factory
+    {
+        $id = Auth::guard('client')->id();
+        $profileData = Client::find($id);
+
+        return view('client.client_profile', compact('profileData'));
+    }
+
+    /**
+     * @param Request $request
+     * @return RedirectResponse
+     */
+    public function ClientProfileStore(Request $request): RedirectResponse
+    {
+        $id = Auth::guard('client')->id();
+        $clientData = Client::find($id);
+
+        $request->validate([
+            'email' => 'email',
+        ]);
+
+        if ($request->email) {
+            $clientData->email = $request->email;
+        }
+        $clientData->name = $request->name;
+        $clientData->phone = $request->phone;
+        $clientData->address = $request->address;
+        $oldPhoto = $clientData->photo;
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = time().'.'.$file->getClientOriginalExtension();
+            $file->move(public_path('upload/client_images'), $filename);
+            $clientData->photo = $filename;
+
+            if ($oldPhoto && $oldPhoto !== $filename) {
+                $this->deleteOldImage($oldPhoto);
+            }
+        }
+        $clientData->save();
+
+        $notification = array(
+            'message' => 'Profile Updated Successfully!',
+            'alert-type' => 'success'
+        );
+
+        return redirect()->back()->with($notification);
+
+    }
+
+    /**
+     * @param $oldPhoto
+     * @return void
+     */
+    private function deleteOldImage($oldPhoto): void
+    {
+        $fullPath = public_path('upload/client_images/'.$oldPhoto);
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }
