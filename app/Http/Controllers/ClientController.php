@@ -267,4 +267,49 @@ class ClientController extends Controller
             unlink($fullPath);
         }
     }
+
+    /**
+     * @return Factory|View|Application
+     */
+    public function ClientChangePassword(): Factory|View|Application
+    {
+        $id = Auth::guard('client')->id();
+        $profileData = Client::find($id);
+
+        return view('client.client_change_password', compact('profileData'));
+    }
+
+    /**
+     * @param Request $request
+     * @return RedirectResponse
+     */
+    public function ClientPasswordUpdate(Request $request): RedirectResponse
+    {
+        $clientData = Auth::guard('client')->user();
+
+        $request->validate([
+            'old_password' => 'required',
+            'new_password' => 'required|confirmed',
+        ]);
+
+        if(!Hash::check($request->old_password, $clientData->password)) {
+            $notification = array(
+                'message' => "Old password doesn't match!",
+                'alert-type' => 'error'
+            );
+
+            return back()->with($notification);
+        }
+
+        Client::whereId($clientData->id)->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        $notification = array(
+            'message' => "Password updated successfully!",
+            'alert-type' => 'success'
+        );
+
+        return back()->with($notification);
+    }
 }
